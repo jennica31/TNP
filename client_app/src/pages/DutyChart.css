@@ -972,3 +972,146 @@
     print-color-adjust: exact !important;
   }
 }
+
+/* ==========================================================================
+   Duty Chart Dark Theme Styles
+   Provides full dark mode support across the manager container, cards,
+   editor table, inputs, dropdowns, and modals.
+   ========================================================================== */
+
+.dark .dc-manager-container {
+  color: #f1f5f9;
+}
+
+.dark .dc-card {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.dark .dc-toolbar,
+.dark .dc-toolbar-top {
+  background: #0f172a;
+  border-color: #334155;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .dc-editor-table {
+  border-color: #334155;
+}
+
+.dark .dc-editor-table th {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+.dark .dc-editor-table td {
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .dc-editor-table tr:hover {
+  background-color: #1e293b;
+}
+
+.dark .dc-editor-input {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+.dark .dc-editor-input::placeholder {
+  color: #64748b;
+}
+
+.dark .dc-editor-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+  outline: none;
+}
+
+.dark .dc-editor-select {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark .dc-editor-select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark .dc-input,
+.dark .dc-textarea {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+.dark .dc-input::placeholder,
+.dark .dc-textarea::placeholder {
+  color: #64748b;
+}
+
+.dark .dc-input:focus,
+.dark .dc-textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+  outline: none;
+}
+
+.dark .dc-btn-secondary {
+  background: #334155;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+
+.dark .dc-btn-secondary:hover {
+  background: #475569;
+}
+
+.dark .dc-dates-editor {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark .dc-date-tag {
+  background: #1e293b;
+  color: #93c5fd;
+  border-color: #3b82f6;
+}
+
+.dark .dc-inline-preview-header {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .dc-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+.dark .dc-modal-content {
+  background: #1e293b;
+  color: #f1f5f9;
+  border: 1px solid #334155;
+}
+
+.dark .dc-modal-header {
+  border-color: #334155;
+}
+
+.dark .dc-modal-footer {
+  border-color: #334155;
+}
+
+.dark .dc-draft-item {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.dark .dc-draft-item:hover {
+  background: #1e293b;
+  border-color: #3b82f6;
+}

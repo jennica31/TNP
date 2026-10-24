@@ -32,6 +32,15 @@ interface SavedDraftItem {
   eventDates: string[];
 }
 
+export interface FacultyUserItem {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  designation: string;
+  role: string;
+}
+
 const getBlankFormData = (serial: string = ""): DutyChartFormData => ({
   srNo: serial,
   date: new Date().toISOString().split("T")[0],
@@ -88,10 +97,12 @@ export const DutyChart: React.FC = () => {
   const [formData, setFormData] = useState<DutyChartFormData>(getBlankFormData());
   const [tableData, setTableData] = useState<DutyChartTableRow[]>([getBlankTableRow(1)]);
 
-  // Backend metadata for draft management
+  // Backend metadata for draft management & live faculty list
   const [savedDrafts, setSavedDrafts] = useState<SavedDraftItem[]>([]);
   const [showDraftsModal, setShowDraftsModal] = useState<boolean>(false);
   const [newDateInput, setNewDateInput] = useState<string>("");
+  const [facultyList, setFacultyList] = useState<FacultyUserItem[]>([]);
+  const [manualNameRows, setManualNameRows] = useState<Record<number, boolean>>({});
 
   // Load genuine serial & metadata
   const loadInitialData = () => {
@@ -106,7 +117,9 @@ export const DutyChart: React.FC = () => {
             date: data.currentDate || prev.date,
           }));
         }
-
+        if (Array.isArray(data.facultyList)) {
+          setFacultyList(data.facultyList);
+        }
       })
       .catch((err) => {
         console.warn("Failed fetching duty chart initial data:", err);
@@ -177,6 +190,9 @@ export const DutyChart: React.FC = () => {
         setTableData([getBlankTableRow(1)]);
         setNotesRaw("");
         setSavedNoticeId(null);
+        if (Array.isArray(data.facultyList)) {
+          setFacultyList(data.facultyList);
+        }
         toast.success("Created new blank Duty Chart");
       })
       .catch(() => {
@@ -231,6 +247,36 @@ export const DutyChart: React.FC = () => {
     setTableData((prev) =>
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
     );
+  };
+
+  // Autofill faculty details from admin database selection
+  const handleFacultySelect = (index: number, selectedName: string) => {
+    if (selectedName === "__custom__") {
+      setManualNameRows((prev) => ({ ...prev, [index]: true }));
+      return;
+    }
+    if (!selectedName) {
+      handleTableCellChange(index, "name", "");
+      return;
+    }
+    const faculty = facultyList.find((f) => f.name === selectedName);
+    if (faculty) {
+      setTableData((prev) =>
+        prev.map((row, i) =>
+          i === index
+            ? {
+                ...row,
+                name: faculty.name,
+                designation: faculty.designation || row.designation,
+                department: faculty.department || row.department,
+              }
+            : row
+        )
+      );
+      toast.success(`Autofilled details for ${faculty.name}`);
+    } else {
+      handleTableCellChange(index, "name", selectedName);
+    }
   };
 
   const toggleDutyDate = (rowIndex: number, dateHeader: string) => {
@@ -334,7 +380,7 @@ export const DutyChart: React.FC = () => {
     fontSize: "16px",
     lineHeight: 1.5,
     letterSpacing: "0.00938em",
-    color: "#000000ff",
+    color: "var(--foreground, #1e293b)",
     margin: "0 0 12px 0",
     display: "flex",
     alignItems: "center",
@@ -522,8 +568,8 @@ export const DutyChart: React.FC = () => {
                 <table className="dc-editor-table">
                   <colgroup>
                     <col style={{ width: "45px" }} />
-                    <col style={{ width: "160px" }} />
-                    <col style={{ width: "120px" }} />
+                    <col style={{ width: "210px" }} />
+                    <col style={{ width: "130px" }} />
                     <col style={{ width: "90px" }} />
                     <col style={{ width: "100px" }} />
                     {formData.eventDates.map((d) => (
@@ -536,8 +582,8 @@ export const DutyChart: React.FC = () => {
                   <thead>
                     <tr>
                       <th style={{ width: "45px", textAlign: "center" }}>Sr.</th>
-                      <th style={{ width: "160px", textAlign: "center" }}>Faculty / Staff Name</th>
-                      <th style={{ width: "120px", textAlign: "center" }}>Designation</th>
+                      <th style={{ width: "210px", textAlign: "center" }}>Faculty / Staff Name</th>
+                      <th style={{ width: "130px", textAlign: "center" }}>Designation</th>
                       <th style={{ width: "90px", textAlign: "center" }}>Dept</th>
                       <th style={{ width: "100px", textAlign: "center" }}>Reporting Time</th>
                       {formData.eventDates.map((d) => (
@@ -557,16 +603,52 @@ export const DutyChart: React.FC = () => {
                           {row.srNo ?? index + 1}
                         </td>
                         <td style={{ textAlign: "center", verticalAlign: "middle" }}>
-                          <input
-                            type="text"
-                            value={row.name}
-                            onChange={(e) =>
-                              handleTableCellChange(index, "name", e.target.value)
-                            }
-                            className="dc-editor-input"
-                            style={{ textAlign: "center" }}
-                            placeholder="Name"
-                          />
+                          {manualNameRows[index] ? (
+                            <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                              <input
+                                type="text"
+                                value={row.name}
+                                onChange={(e) =>
+                                  handleTableCellChange(index, "name", e.target.value)
+                                }
+                                className="dc-editor-input"
+                                style={{ textAlign: "center" }}
+                                placeholder="Enter Name"
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setManualNameRows((prev) => ({ ...prev, [index]: false }))
+                                }
+                                className="dc-btn dc-btn-secondary dc-btn-sm"
+                                style={{ padding: "2px 6px", fontSize: "11px", height: "26px", whiteSpace: "nowrap" }}
+                                title="Switch back to dropdown list"
+                              >
+                                List
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                              <select
+                                value={row.name}
+                                onChange={(e) => handleFacultySelect(index, e.target.value)}
+                                className="dc-editor-input dc-editor-select"
+                                style={{ textAlign: "left", fontSize: "12px", height: "28px", cursor: "pointer", width: "100%" }}
+                              >
+                                <option value="">-- Select Faculty / Staff --</option>
+                                {row.name && !facultyList.some((f) => f.name === row.name) && (
+                                  <option value={row.name}>{row.name} (Custom)</option>
+                                )}
+                                {facultyList.map((f) => (
+                                  <option key={f.id} value={f.name}>
+                                    {f.name} {f.department ? `(${f.department})` : ""}
+                                  </option>
+                                ))}
+                                <option value="__custom__">+ Type Custom Name...</option>
+                              </select>
+                            </div>
+                          )}
                         </td>
                         <td style={{ textAlign: "center", verticalAlign: "middle" }}>
                           <input

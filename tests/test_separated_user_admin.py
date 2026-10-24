@@ -17,6 +17,7 @@ from django.test import RequestFactory
 from base.admin import (
     CustomUserAdmin,
     FacultyStaffDepartmentFilter,
+    FacultyStaffDesignationFilter,
     FacultyStaffProgramFilter,
     FacultyStaffUserAdmin,
     FacultyStaffUserChangeForm,
@@ -24,6 +25,8 @@ from base.admin import (
     StudentUserAdmin,
     StudentUserChangeForm,
     StudentUserCreationForm,
+    get_department_choices,
+    get_designation_choices,
 )
 from base.models import (
     NON_STUDENT_ROLES,
@@ -329,3 +332,78 @@ def test_is_staff_not_automatically_granted():
     user = form.save()
     assert user.is_staff is False
     assert user.is_superuser is False
+
+
+@pytest.mark.django_db
+def test_faculty_staff_designation_and_department_choices():
+    """All 14 institutional departments and requested designations are available in dropdown choices."""
+    dept_choices = [c[0] for c in get_department_choices()]
+    for expected_dept in ["CS&E", "ES&H", "E&TC", "Civil", "IT", "Comp", "IOT", "M&ME", "Mech", "AI&ML", "AI&DS", "E&CS", "CA", "T&P"]:
+        assert expected_dept in dept_choices, f"Department {expected_dept} missing from choices"
+
+    desig_choices = [c[0] for c in get_designation_choices()]
+    for expected_desig in [
+        "Dean (Training, Placement & Industry Linkage)",
+        "Dy. Training Officer",
+        "Dy. Placement Officer",
+        "Dy. Internship Officer",
+        "Department Coordinator",
+        "T&P Staff",
+    ]:
+        assert expected_desig in desig_choices, f"Designation {expected_desig} missing from choices"
+
+
+@pytest.mark.django_db
+def test_faculty_staff_creation_and_change_with_designation(admin_site, request_factory):
+    """FacultyStaffUserCreationForm and FacultyStaffUserChangeForm correctly persist and update designation."""
+    # Creation
+    create_data = {
+        "email": "dean_test@example.test",
+        "full_name": "Dr. Zahir Aalam",
+        "role": "faculty",
+        "designation": "Dean (Training, Placement & Industry Linkage)",
+        "department": "CS&E",
+        "password1": "DeanPass123!",
+        "password2": "DeanPass123!",
+    }
+    create_form = FacultyStaffUserCreationForm(data=create_data)
+    assert create_form.is_valid(), create_form.errors
+    user = create_form.save()
+
+    resp = FacultyResponsibility.objects.filter(user=user).first()
+    assert resp is not None
+    assert resp.department == "CS&E"
+    assert resp.designation == "Dean (Training, Placement & Industry Linkage)"
+
+    admin = FacultyStaffUserAdmin(FacultyStaffUser, admin_site)
+    assert admin.get_designation(user) == "Dean (Training, Placement & Industry Linkage)"
+    assert admin.get_department(user) == "CS&E"
+
+    # Change form loads initial designation
+    change_form_init = FacultyStaffUserChangeForm(instance=user)
+    assert change_form_init.fields["designation"].initial == "Dean (Training, Placement & Industry Linkage)"
+
+    # Update designation
+    update_data = {
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "password": user.password,
+        "designation": "Department Coordinator",
+        "department": "IT",
+    }
+    change_form = FacultyStaffUserChangeForm(data=update_data, instance=user)
+    assert change_form.is_valid(), change_form.errors
+    updated_user = change_form.save()
+
+    updated_resp = FacultyResponsibility.objects.filter(user=updated_user).first()
+    assert updated_resp.designation == "Department Coordinator"
+    assert updated_resp.department == "IT"
+    assert admin.get_designation(updated_user) == "Department Coordinator"
+
+    # Test Designation Filter
+    req = request_factory.get("/admin/base/facultystaffuser/?designation=Department+Coordinator")
+    desig_filter = FacultyStaffDesignationFilter(req, req.GET.copy(), FacultyStaffUser, admin)
+    filtered_qs = desig_filter.queryset(req, FacultyStaffUser.objects.all())
+    assert updated_user in filtered_qs
+

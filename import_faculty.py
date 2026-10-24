@@ -51,10 +51,21 @@ for idx, row in df.iterrows():
         user.set_password(DEFAULT_SEED_PASSWORD)
         user.save()
 
-    FacultyResponsibility.objects.get_or_create(
+    dept_str = str(dept).strip() if pd.notna(dept) else None
+    desig_str = str(designation).strip() if pd.notna(designation) else None
+
+    resp, resp_created = FacultyResponsibility.objects.get_or_create(
         user=user,
-        department=str(dept).strip() if pd.notna(dept) else None
+        defaults={
+            'department': dept_str,
+            'designation': desig_str,
+        }
     )
+    if not resp_created:
+        resp.department = dept_str
+        if desig_str:
+            resp.designation = desig_str
+        resp.save()
     count += 1
 
 print(f"Successfully imported and updated {count} faculty/staff members!")

@@ -13,6 +13,7 @@ class FacultyResponsibilityResource(resources.ModelResource):
         model = FacultyResponsibility
         fields = (
             "user",
+            "designation",
             "program",
             "department",
         )
@@ -56,7 +57,8 @@ class FacultyResponsibilityResource(resources.ModelResource):
             
         row["user"] = user.id
 
-        # Set defaults for program and department if not provided
+        # Set defaults for designation, program and department if not provided
+        row["designation"] = row.get("designation", None)
         row["program"] = row.get("program", None)
         row["department"] = row.get("department", None)
 

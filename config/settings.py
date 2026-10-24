@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
+from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
@@ -478,6 +479,9 @@ UNFOLD = {
     "SITE_TITLE": "Admin site",
     "SITE_HEADER": "Thakur college of engineering and technology",
     "SITE_URL": CLIENT_URL,
+    "STYLES": [
+        lambda request: static("css/admin-overrides.css"),
+    ],
     # TCET navy ramp, taken from tcetmumbai.in: #153f74 (its menu navy, and the
     # portal's own sidebar colour) sits at 700, with #0059b3 / #2c80d3 - the
     # college's mid and light blues - at 500 and 400. Unfold needs the full

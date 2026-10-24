@@ -7,6 +7,12 @@ from import_export.admin import ImportExportModelAdmin
 from unfold.admin import ModelAdmin, TabularInline
 from unfold.contrib.import_export.forms import ExportForm, ImportForm
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+from unfold.widgets import (
+    UnfoldAdminEmailInputWidget,
+    UnfoldAdminPasswordInput,
+    UnfoldAdminSelectWidget,
+    UnfoldAdminTextInputWidget,
+)
 
 from .models import (
     NON_STUDENT_ROLES,
@@ -19,19 +25,64 @@ from .models import (
 from .resources import FacultyResponsibilityResource
 
 
+def get_designation_choices():
+    """Return choices for designations, including all institutional roles and database entries."""
+    choices = [("", "---------")]
+    known_desigs = [
+        "Dean (Training, Placement & Industry Linkage)",
+        "Dy. Training Officer",
+        "Dy. Placement Officer",
+        "Dy. Internship Officer",
+        "Department Coordinator",
+        "T&P Staff",
+        "Training Officer",
+        "Placement Officer",
+        "Internship Officer",
+        "Principal",
+        "Vice Principal",
+        "Faculty",
+        "Staff",
+    ]
+    try:
+        existing_desigs = list(
+            FacultyResponsibility.objects.exclude(designation__isnull=True)
+            .exclude(designation="")
+            .values_list("designation", flat=True)
+            .distinct()
+        )
+        for d in existing_desigs:
+            if d and d not in known_desigs:
+                known_desigs.append(d)
+    except Exception:
+        pass
+    for d in known_desigs:
+        choices.append((d, d))
+    return choices
+
+
 def get_department_choices():
+    """Return choices for departments, guaranteeing all 14 institutional departments and reference data."""
     choices = [("", "---------")]
     known_depts = [
-        "IT",
-        "CMPN",
         "AI&DS",
         "AI&ML",
-        "EXTC",
-        "ELEX",
-        "MECH",
+        "CA",
         "CIVIL",
-        "IOT",
+        "Civil",
+        "CMPN",
+        "Comp",
         "CS&E",
+        "E&CS",
+        "E&TC",
+        "ELEX",
+        "ES&H",
+        "EXTC",
+        "IOT",
+        "IT",
+        "M&ME",
+        "MECH",
+        "Mech",
+        "T&P",
     ]
     try:
         from institution.models import Department
@@ -53,7 +104,7 @@ def get_department_choices():
                 known_depts.append(d)
     except Exception:
         pass
-    for d in sorted(known_depts):
+    for d in sorted(set(known_depts), key=lambda x: (x.upper(), x)):
         choices.append((d, d))
     return choices
 
@@ -63,6 +114,26 @@ def get_program_choices():
     for code, label in PROGRAM_OPTIONS:
         choices.append((code, label))
     return choices
+
+
+class FacultyStaffDesignationFilter(SimpleListFilter):
+    title = "Designation"
+    parameter_name = "designation"
+
+    def lookups(self, request, model_admin):
+        designations = (
+            FacultyResponsibility.objects.exclude(designation__isnull=True)
+            .exclude(designation="")
+            .values_list("designation", flat=True)
+            .distinct()
+            .order_by("designation")
+        )
+        return [(d, d) for d in designations if d]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(facultyresponsibility__designation=self.value())
+        return queryset
 
 
 class FacultyStaffDepartmentFilter(SimpleListFilter):
@@ -118,30 +189,52 @@ def _normalize_unfold_form_args(args, kwargs):
 class FacultyStaffUserCreationForm(UserCreationForm):
     """
     Dedicated creation form for Faculty & Staff users.
-    Only allows non-student roles and safely saves department and program assignments.
+    Only allows non-student roles and safely saves designation, department, and program assignments.
     """
-    email = forms.EmailField(label="Email address", required=True)
-    full_name = forms.CharField(label="Full name", max_length=100, required=True)
+    email = forms.EmailField(
+        label="Email address",
+        required=True,
+        widget=UnfoldAdminEmailInputWidget(attrs={"placeholder": "faculty@tcetmumbai.in"}),
+    )
+    full_name = forms.CharField(
+        label="Full name",
+        max_length=100,
+        required=True,
+        widget=UnfoldAdminTextInputWidget(attrs={"placeholder": "Prof. Full Name"}),
+    )
     role = forms.ChoiceField(
         label="Application Role",
         choices=NON_STUDENT_ROLES,
         initial="faculty",
         required=True,
+        widget=UnfoldAdminSelectWidget(),
         help_text="Select a valid faculty, staff, or administrative role. Student accounts cannot be created here.",
+    )
+    designation = forms.ChoiceField(
+        label="Designation",
+        required=False,
+        widget=UnfoldAdminSelectWidget(),
+        help_text="Official institutional designation (saved to FacultyResponsibility).",
     )
     department = forms.ChoiceField(
         label="Department Assignment",
         required=False,
+        widget=UnfoldAdminSelectWidget(),
         help_text="Primary academic department (saved to FacultyResponsibility).",
     )
     program = forms.ChoiceField(
         label="Program Assignment",
         required=False,
+        widget=UnfoldAdminSelectWidget(),
         help_text="Primary training program assignment (saved to FacultyResponsibility).",
     )
-    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+    password1 = forms.CharField(
+        label="Password",
+        widget=UnfoldAdminPasswordInput(),
+    )
     password2 = forms.CharField(
-        label="Password confirmation", widget=forms.PasswordInput
+        label="Password confirmation",
+        widget=UnfoldAdminPasswordInput(),
     )
     is_staff = forms.BooleanField(
         label="Django Admin Access (is_staff)",
@@ -158,11 +251,12 @@ class FacultyStaffUserCreationForm(UserCreationForm):
 
     class Meta:
         model = FacultyStaffUser
-        fields = ("email", "full_name", "role", "department", "program", "is_staff", "is_superuser")
+        fields = ("email", "full_name", "role", "designation", "department", "program", "is_staff", "is_superuser")
 
     def __init__(self, *args, **kwargs):
         args, kwargs = _normalize_unfold_form_args(args, kwargs)
         super().__init__(*args, **kwargs)
+        self.fields["designation"].choices = get_designation_choices()
         self.fields["department"].choices = get_department_choices()
         self.fields["program"].choices = get_program_choices()
         self.fields["role"].choices = NON_STUDENT_ROLES
@@ -199,11 +293,13 @@ class FacultyStaffUserCreationForm(UserCreationForm):
             if commit:
                 user.save()
                 dept = (self.cleaned_data.get("department") or "").strip() or None
+                desig = (self.cleaned_data.get("designation") or "").strip() or None
                 prog = (self.cleaned_data.get("program") or "").strip() or None
-                if dept or prog:
+                if dept or prog or desig:
                     FacultyResponsibility.objects.create(
                         user=user,
                         department=dept,
+                        designation=desig,
                         program=prog,
                     )
             return user
@@ -221,19 +317,34 @@ class FacultyStaffUserChangeForm(UserChangeForm):
             "to set a new password."
         ),
     )
+    full_name = forms.CharField(
+        label="Full name",
+        max_length=100,
+        required=True,
+        widget=UnfoldAdminTextInputWidget(),
+    )
     role = forms.ChoiceField(
         label="Application Role",
         choices=NON_STUDENT_ROLES,
         required=True,
+        widget=UnfoldAdminSelectWidget(),
+    )
+    designation = forms.ChoiceField(
+        label="Designation",
+        required=False,
+        widget=UnfoldAdminSelectWidget(),
+        help_text="Official designation in FacultyResponsibility.",
     )
     department = forms.ChoiceField(
         label="Department Assignment",
         required=False,
+        widget=UnfoldAdminSelectWidget(),
         help_text="Primary department assignment in FacultyResponsibility.",
     )
     program = forms.ChoiceField(
         label="Program Assignment",
         required=False,
+        widget=UnfoldAdminSelectWidget(),
         help_text="Primary program assignment in FacultyResponsibility.",
     )
 
@@ -244,6 +355,7 @@ class FacultyStaffUserChangeForm(UserChangeForm):
             "password",
             "full_name",
             "role",
+            "designation",
             "department",
             "program",
             "is_staff",
@@ -253,6 +365,7 @@ class FacultyStaffUserChangeForm(UserChangeForm):
     def __init__(self, *args, **kwargs):
         args, kwargs = _normalize_unfold_form_args(args, kwargs)
         super().__init__(*args, **kwargs)
+        self.fields["designation"].choices = get_designation_choices()
         self.fields["department"].choices = get_department_choices()
         self.fields["program"].choices = get_program_choices()
         self.fields["role"].choices = NON_STUDENT_ROLES
@@ -261,6 +374,8 @@ class FacultyStaffUserChangeForm(UserChangeForm):
             if resp:
                 if resp.department:
                     self.fields["department"].initial = resp.department
+                if resp.designation:
+                    self.fields["designation"].initial = resp.designation
                 if resp.program:
                     self.fields["program"].initial = resp.program
 
@@ -280,22 +395,26 @@ class FacultyStaffUserChangeForm(UserChangeForm):
         with transaction.atomic():
             user = super().save(commit=commit)
             dept = (self.cleaned_data.get("department") or "").strip() or None
+            desig = (self.cleaned_data.get("designation") or "").strip() or None
             prog = (self.cleaned_data.get("program") or "").strip() or None
 
             resp = FacultyResponsibility.objects.filter(user=user).first()
-            if dept or prog:
+            if dept or prog or desig:
                 if resp:
                     resp.department = dept
+                    resp.designation = desig
                     resp.program = prog
                     resp.save()
                 else:
                     FacultyResponsibility.objects.create(
                         user=user,
                         department=dept,
+                        designation=desig,
                         program=prog,
                     )
-            elif resp and not dept and not prog:
+            elif resp and not dept and not prog and not desig:
                 resp.department = None
+                resp.designation = None
                 resp.program = None
                 resp.save()
             return user
@@ -304,7 +423,7 @@ class FacultyStaffUserChangeForm(UserChangeForm):
 class FacultyResponsibilityInline(TabularInline):
     model = FacultyResponsibility
     extra = 0
-    fields = ("department", "program")
+    fields = ("designation", "department", "program")
     verbose_name = "Assigned Responsibility"
     verbose_name_plural = "All Assigned Responsibilities (Multi-hat)"
 
@@ -321,16 +440,18 @@ class FacultyStaffUserAdmin(BaseUserAdmin, ModelAdmin):
         "full_name",
         "email",
         "role",
+        "get_designation",
         "get_department",
         "get_program",
         "is_staff",
         "is_superuser",
     ]
     list_display_links = ["full_name", "email"]
-    list_filter = ["role", "is_staff", "is_superuser", FacultyStaffDepartmentFilter, FacultyStaffProgramFilter]
+    list_filter = ["role", "is_staff", "is_superuser", FacultyStaffDesignationFilter, FacultyStaffDepartmentFilter, FacultyStaffProgramFilter]
     search_fields = [
         "email",
         "full_name",
+        "facultyresponsibility__designation",
         "facultyresponsibility__department",
         "facultyresponsibility__program",
         "id",
@@ -347,6 +468,7 @@ class FacultyStaffUserAdmin(BaseUserAdmin, ModelAdmin):
                 "fields": (
                     "full_name",
                     "role",
+                    "designation",
                     "department",
                     "program",
                     "id",
@@ -373,6 +495,7 @@ class FacultyStaffUserAdmin(BaseUserAdmin, ModelAdmin):
                     "email",
                     "full_name",
                     "role",
+                    "designation",
                     "department",
                     "program",
                     "password1",
@@ -392,6 +515,14 @@ class FacultyStaffUserAdmin(BaseUserAdmin, ModelAdmin):
             .prefetch_related("facultyresponsibility_set")
             .order_by("full_name", "email")
         )
+
+    def get_designation(self, obj):
+        desigs = sorted(set(r.designation for r in obj.facultyresponsibility_set.all() if r.designation))
+        if desigs:
+            return ", ".join(desigs)
+        return obj.role.replace("_", " ").title() if obj.role else "-"
+
+    get_designation.short_description = "Designation"
 
     def get_department(self, obj):
         depts = sorted(set(r.department for r in obj.facultyresponsibility_set.all() if r.department))
@@ -415,11 +546,24 @@ class StudentUserCreationForm(UserCreationForm):
     Dedicated creation form for Student user accounts.
     Enforces role='student' and protects academic workflows.
     """
-    email = forms.EmailField(label="Email address", required=True)
-    full_name = forms.CharField(label="Full name", max_length=100, required=True)
-    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+    email = forms.EmailField(
+        label="Email address",
+        required=True,
+        widget=UnfoldAdminEmailInputWidget(attrs={"placeholder": "student@tcetmumbai.in"}),
+    )
+    full_name = forms.CharField(
+        label="Full name",
+        max_length=100,
+        required=True,
+        widget=UnfoldAdminTextInputWidget(attrs={"placeholder": "Student Full Name"}),
+    )
+    password1 = forms.CharField(
+        label="Password",
+        widget=UnfoldAdminPasswordInput(),
+    )
     password2 = forms.CharField(
-        label="Password confirmation", widget=forms.PasswordInput
+        label="Password confirmation",
+        widget=UnfoldAdminPasswordInput(),
     )
 
     class Meta:
@@ -465,6 +609,12 @@ class StudentUserChangeForm(UserChangeForm):
             "Raw passwords are not stored. Use the 'Change password' link below "
             "to set a new password."
         ),
+    )
+    full_name = forms.CharField(
+        label="Full name",
+        max_length=100,
+        required=True,
+        widget=UnfoldAdminTextInputWidget(),
     )
 
     class Meta:
@@ -613,6 +763,18 @@ class StudentUserAdmin(BaseUserAdmin, ModelAdmin):
 class CustomUserChangeForm(UserChangeForm):
     """Form for updating users across all types for system auditing."""
     password = ReadOnlyPasswordHashField()
+    full_name = forms.CharField(
+        label="Full name",
+        max_length=100,
+        required=True,
+        widget=UnfoldAdminTextInputWidget(),
+    )
+    role = forms.ChoiceField(
+        label="Application Role",
+        choices=User.USER_ROLE_TYPE,
+        required=True,
+        widget=UnfoldAdminSelectWidget(),
+    )
 
     class Meta:
         model = User

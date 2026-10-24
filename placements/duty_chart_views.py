@@ -64,15 +64,17 @@ class DutyChartInitialDataAPIView(APIView):
                 "batch": getattr(opp, "batch", ""),
             })
 
-        # Available faculty and staff from User table for optional selection
+        # Available faculty and staff from User table for selection in Duty Chart
         faculty_users = []
-        user_qs = User.objects.filter(
-            role__in=["faculty", "staff", "placement_officer", "training_officer", "internship_officer"]
-        ).order_by("full_name")
+        user_qs = (
+            User.objects.exclude(role="student")
+            .prefetch_related("facultyresponsibility_set")
+            .order_by("full_name")
+        )
         for u in user_qs:
-            resp = FacultyResponsibility.objects.filter(user=u).first()
-            dept = resp.department if resp else ""
-            desig = u.role.replace("_", " ").title()
+            resp = u.facultyresponsibility_set.first()
+            dept = (resp.department or "") if resp else ""
+            desig = (resp.designation or "") if resp and resp.designation else u.role.replace("_", " ").title()
             faculty_users.append({
                 "id": str(u.id),
                 "name": u.full_name,

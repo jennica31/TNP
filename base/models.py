@@ -220,8 +220,9 @@ PROGRAM_OPTIONS = [
 class FacultyResponsibility(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    program = models.CharField(max_length=255, null=True)
-    department = models.CharField(max_length=255, null=True)
+    designation = models.CharField(max_length=255, null=True, blank=True)
+    program = models.CharField(max_length=255, null=True, blank=True)
+    department = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         verbose_name = "Faculty Responsibility"
@@ -229,6 +230,8 @@ class FacultyResponsibility(models.Model):
 
     def __str__(self):
         parts = []
+        if self.designation:
+            parts.append(f"Desig: {self.designation}")
         if self.department:
             parts.append(f"Dept: {self.department}")
         if self.program:

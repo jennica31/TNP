@@ -13,3 +13,103 @@
 #modal-overlay[hidden] {
     display: none !important;
 }
+
+/* ==========================================================================
+   Admin Form Controls (Light and Dark Theme Consistency)
+   Ensures text inputs, email inputs, password inputs, and selects have
+   visible borders, readable contrast, and unified styling in both themes.
+   ========================================================================== */
+
+/* Light Mode Defaults */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+select,
+textarea {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+    border-color: #2563eb !important;
+    outline: 2px solid rgba(37, 99, 235, 0.25) !important;
+    box-shadow: 0 0 0 1px #2563eb !important;
+}
+
+select option {
+    background-color: #ffffff;
+    color: #111827;
+}
+
+/* Dark Mode Overrides (Unfold applies 'dark' class to html element) */
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="number"],
+html.dark input[type="url"],
+html.dark select,
+html.dark textarea,
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="url"],
+.dark select,
+.dark textarea {
+    border: 1px solid #4b5563 !important;
+    background-color: #1f2937 !important;
+    color: #f9fafb !important;
+}
+
+html.dark input[type="text"]:focus,
+html.dark input[type="email"]:focus,
+html.dark input[type="password"]:focus,
+html.dark input[type="number"]:focus,
+html.dark input[type="url"]:focus,
+html.dark select:focus,
+html.dark textarea:focus,
+.dark input[type="text"]:focus,
+.dark input[type="email"]:focus,
+.dark input[type="password"]:focus,
+.dark input[type="number"]:focus,
+.dark input[type="url"]:focus,
+.dark select:focus,
+.dark textarea:focus {
+    border-color: #60a5fa !important;
+    outline: 2px solid rgba(96, 165, 250, 0.3) !important;
+    box-shadow: 0 0 0 1px #60a5fa !important;
+}
+
+html.dark select option,
+.dark select option {
+    background-color: #1f2937 !important;
+    color: #f9fafb !important;
+}
+
+/* Readonly fields & disabled state in both themes */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+html.dark input:disabled,
+html.dark select:disabled,
+html.dark textarea:disabled {
+    background-color: #374151 !important;
+    color: #9ca3af !important;
+}
