@@ -72,5 +72,6 @@ urlpatterns = [
         name="user_profile_update_password",
     ),
     path("api/staff/", include("placements.urls_drives")),
+    path("api/reports/", include("reports.urls")),
     re_path(r"^media/(?P<path>.*)$", views.serve_media, name="serve_media"),
 ]

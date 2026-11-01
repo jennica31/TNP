@@ -105,6 +105,7 @@ INSTALLED_APPS = [
     # batch spreadsheets (rosters + placement registers) and the synthetic
     # training/internship seeder.
     "dataimport",
+    "reports",
 ]
 
 # ---------------------------------

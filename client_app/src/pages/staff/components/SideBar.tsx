@@ -1,6 +1,6 @@
 import { NavLink } from "react-router"; // Import Link for routing
 import "../../placement_officer/components/sidebar.css";
-import { Building2, NotebookPen, Send, Verified } from "lucide-react";
+import { Building2, NotebookPen, Send, Verified, FileBarChart2 } from "lucide-react";
 import { logout, redirectToProfile } from "@/utils";
 import { SERVER_URL } from "@/constant";
 import Logo from "@/assets/img/logo.png";
@@ -45,6 +45,10 @@ const Sidebar = () => {
         <NavLink to="/notifications/create" className="menu-item gap-3">
           <Send />
           <p>Notification</p>
+        </NavLink>
+        <NavLink to="reports" className="menu-item gap-3">
+          <FileBarChart2 />
+          <p>Report</p>
         </NavLink>
       </ul>
       <div className="bottom-menu">

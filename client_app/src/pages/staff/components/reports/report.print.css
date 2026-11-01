@@ -1,0 +1,160 @@
+/* Official TNP Report Print Styles */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 10mm 10mm 10mm !important;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* Unhide staff layout hierarchy and ensure unconstrained document flow */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 9.5pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .ribbon,
+  .app,
+  .main-content1 {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* Hide navigation, buttons, sidebars, headers */
+  .no-print,
+  .sidebar,
+  .bottom-menu,
+  header,
+  footer,
+  nav,
+  button,
+  .tab-bar,
+  .search-filter-bar,
+  .MuiTypography-h3,
+  main > h3 {
+    display: none !important;
+  }
+
+  /* Force display of printable content */
+  .print-area {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Unbound all container heights and scrollboxes */
+  div,
+  section,
+  article,
+  main {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    box-shadow: none !important;
+  }
+
+  /* Official table styles with natural page breaks */
+  table,
+  .official-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    font-size: 8.5pt !important;
+    margin-bottom: 12px !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  tbody {
+    display: table-row-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  th,
+  td,
+  .official-table th,
+  .official-table td {
+    border: 1px solid #000000 !important;
+    padding: 3.5px 4.5px !important;
+    color: #000000 !important;
+    text-align: left;
+    word-break: break-word !important;
+  }
+
+  th,
+  .official-table th {
+    background-color: #f0f0f0 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .page-break {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* Signatures section kept intact */
+  .signatures-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 20px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .sig-block {
+    flex: 1 1 0 !important;
+    text-align: center !important;
+    font-size: 8.5pt !important;
+    border: 1px solid #000000 !important;
+    padding: 6px !important;
+    background: #ffffff !important;
+  }
+}
