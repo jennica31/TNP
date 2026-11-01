@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useReactToPrint } from "react-to-print";
-import { Printer, Plus, Trash2, RotateCcw } from "lucide-react";
+import { Printer, Plus, Trash2, RotateCcw, FolderOpen, Save } from "lucide-react";
+import toast from "react-hot-toast";
 import "@/pages/DutyChart.css";
 import NoticePreview from "./NoticePreview";
 
@@ -36,6 +37,15 @@ export interface InfraFormData {
   tableRows: InfraTableRow[];
 }
 
+export interface InfraDraftItem {
+  id: string;
+  subject: string;
+  refNo: string;
+  date: string;
+  savedAt: string;
+  formData: InfraFormData;
+}
+
 const emptyRow = (): InfraTableRow => ({
   particulars: "",
   requirements: "",
@@ -48,6 +58,34 @@ const defaultTableRows: InfraTableRow[] = [
   { particulars: "ICT", requirements: "", remarks: "" },
   { particulars: "Maintenance", requirements: "", remarks: "" },
 ];
+
+const getInitialFormData = (): InfraFormData => ({
+  refNo: "",
+  date: new Date().toISOString().split("T")[0],
+  toName: "The Principal",
+  toDesignation: "",
+  toInstitution: "TCET",
+  toCity: "Kandivali East",
+  toPin: "Mumbai – 400101",
+  senderName: "Dr. Zahir Aalam",
+  senderDesignation: "Dean (TP&IL)",
+  senderInstitution: "TCET",
+  senderCity: "Kandivali East",
+  senderPin: "Mumbai – 400101",
+  subject: "",
+  salutation: "Respected Sir,",
+  introParagraph: "",
+  note: "",
+  closingParagraph:
+    "Please advise to the respective department about the necessary arrangements mentioned above for the smooth conduction of the Program.",
+  thankingLine: "Thanking you.",
+  regardsLine: "Yours Sincerely,",
+  signatoryName: "Dr. Zahir Aalam",
+  signatoryDesignation: "Dean (TP&IL)",
+  copyTo:
+    "Principal / Vice-Principal / All Deans / HODs / Section in charges / Librarian / Mr. Binay Vyas",
+  tableRows: defaultTableRows.map((r) => ({ ...r })),
+});
 
 const InfrastructureBooking = () => {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -70,33 +108,108 @@ const InfrastructureBooking = () => {
   });
 
   // User-input fields are blank by default; official institutional content is automatically populated
-  const [formData, setFormData] = useState<InfraFormData>({
-    refNo: "",
-    date: new Date().toISOString().split("T")[0],
-    toName: "The Principal",
-    toDesignation: "",
-    toInstitution: "TCET",
-    toCity: "Kandivali East",
-    toPin: "Mumbai – 400101",
-    senderName: "Dr. Zahir Aalam",
-    senderDesignation: "Dean (TP&IL)",
-    senderInstitution: "TCET",
-    senderCity: "Kandivali East",
-    senderPin: "Mumbai – 400101",
-    subject: "",
-    salutation: "Respected Sir,",
-    introParagraph: "",
-    note: "",
-    closingParagraph:
-      "Please advise to the respective department about the necessary arrangements mentioned above for the smooth conduction of the Program.",
-    thankingLine: "Thanking you.",
-    regardsLine: "Yours Sincerely,",
-    signatoryName: "Dr. Zahir Aalam",
-    signatoryDesignation: "Dean (TP&IL)",
-    copyTo:
-      "Principal / Vice-Principal / All Deans / HODs / Section in charges / Librarian / Mr. Binay Vyas",
-    tableRows: defaultTableRows,
-  });
+  const [formData, setFormData] = useState<InfraFormData>(getInitialFormData);
+  const [saving, setSaving] = useState(false);
+  const [showDraftsModal, setShowDraftsModal] = useState(false);
+  const [savedDrafts, setSavedDrafts] = useState<InfraDraftItem[]>([]);
+
+  useEffect(() => {
+    try {
+      const existingRaw = localStorage.getItem("tnp_infra_booking_drafts");
+      if (existingRaw) {
+        const parsed = JSON.parse(existingRaw);
+        if (Array.isArray(parsed)) {
+          setSavedDrafts(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleResetForm = () => {
+    setFormData(getInitialFormData());
+    toast.success("Infrastructure form reset to clean state");
+  };
+
+  const handleSaveDraft = () => {
+    try {
+      setSaving(true);
+      const newDraft: InfraDraftItem = {
+        id: String(Date.now()),
+        subject: formData.subject.trim() || "Untitled Infrastructure Booking",
+        refNo: formData.refNo.trim() || "N/A",
+        date: formData.date || new Date().toISOString().split("T")[0],
+        savedAt: new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        formData: JSON.parse(JSON.stringify(formData)),
+      };
+
+      const existingRaw = localStorage.getItem("tnp_infra_booking_drafts");
+      let draftsList: InfraDraftItem[] = [];
+      if (existingRaw) {
+        try {
+          const parsed = JSON.parse(existingRaw);
+          if (Array.isArray(parsed)) draftsList = parsed;
+        } catch (e) {
+          console.error("Failed to parse drafts:", e);
+        }
+      }
+
+      draftsList = [newDraft, ...draftsList.filter((d) => d.id !== newDraft.id)].slice(0, 25);
+      localStorage.setItem("tnp_infra_booking_drafts", JSON.stringify(draftsList));
+      setSavedDrafts(draftsList);
+      toast.success("Infrastructure draft saved successfully!");
+    } catch (err) {
+      console.error("Error saving draft:", err);
+      toast.error("Failed to save draft");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleOpenDrafts = () => {
+    try {
+      const existingRaw = localStorage.getItem("tnp_infra_booking_drafts");
+      if (existingRaw) {
+        const parsed = JSON.parse(existingRaw);
+        if (Array.isArray(parsed)) {
+          setSavedDrafts(parsed);
+        }
+      } else {
+        setSavedDrafts([]);
+      }
+    } catch (err) {
+      console.error("Error reading saved drafts:", err);
+      setSavedDrafts([]);
+    }
+    setShowDraftsModal(true);
+  };
+
+  const handleLoadDraft = (draft: InfraDraftItem) => {
+    if (draft.formData) {
+      setFormData(draft.formData);
+      setShowDraftsModal(false);
+      toast.success(`Loaded draft: ${draft.subject || "Infrastructure Notice"}`);
+    }
+  };
+
+  const handleDeleteDraft = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const updated = savedDrafts.filter((d) => d.id !== id);
+      setSavedDrafts(updated);
+      localStorage.setItem("tnp_infra_booking_drafts", JSON.stringify(updated));
+      toast.success("Draft deleted");
+    } catch (err) {
+      console.error("Error deleting draft:", err);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -166,6 +279,38 @@ const InfrastructureBooking = () => {
 
   return (
     <div style={{ maxWidth: "1040px", margin: "0 auto", padding: "16px", fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif', WebkitFontSmoothing: "antialiased", MozOsxFontSmoothing: "grayscale" }}>
+      {/* ── Top Draft-Control Bar (matches Duty Chart) ────────────────── */}
+      <div className="dc-toolbar dc-toolbar-top">
+        <button
+          type="button"
+          onClick={handleResetForm}
+          className="dc-btn dc-btn-secondary dc-btn-sm"
+          title="Reset all variable fields to a clean blank state"
+        >
+          <RotateCcw size={13} /> Reset
+        </button>
+
+        <button
+          type="button"
+          onClick={handleOpenDrafts}
+          className="dc-btn dc-btn-secondary dc-btn-sm"
+          title="Open previously saved Infrastructure Notices"
+        >
+          <FolderOpen size={13} /> Load Draft
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSaveDraft}
+          disabled={saving}
+          className="dc-btn dc-btn-primary dc-btn-sm"
+          style={{ marginLeft: "auto" }}
+          title="Save current Infrastructure Notice as draft"
+        >
+          <Save size={13} /> {saving ? "Saving…" : "Save Draft"}
+        </button>
+      </div>
+
       {/* Form Card using Duty Chart styling */}
       <div className="dc-card infra-form-editor">
         <style>{`
@@ -535,6 +680,99 @@ const InfrastructureBooking = () => {
           </div>
         </div>
       </div>
+
+      {/* Saved Drafts Modal (matching Duty Chart) */}
+      {showDraftsModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "12px",
+              padding: "24px",
+              width: "560px",
+              maxWidth: "90%",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+              fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#1e3a8a", fontWeight: 700 }}>Saved Infrastructure Drafts</h3>
+              <button
+                type="button"
+                onClick={() => setShowDraftsModal(false)}
+                className="dc-btn dc-btn-secondary dc-btn-sm"
+              >
+                Close
+              </button>
+            </div>
+
+            {savedDrafts.length === 0 ? (
+              <p style={{ color: "#64748b", fontSize: "14px", textAlign: "center", padding: "20px 0" }}>
+                No saved drafts found.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {savedDrafts.map((d) => (
+                  <div
+                    key={d.id}
+                    style={{
+                      padding: "12px 16px",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      backgroundColor: "#f8fafc",
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: "14px", color: "#1e293b" }}>
+                        {d.subject || "Untitled Infrastructure Booking"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                        Ref No: {d.refNo || "N/A"} &bull; Date: {d.date} &bull; Saved: {d.savedAt}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        type="button"
+                        onClick={() => handleLoadDraft(d)}
+                        className="dc-btn dc-btn-primary dc-btn-sm"
+                      >
+                        Load Draft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteDraft(d.id, e)}
+                        className="dc-btn dc-btn-danger dc-btn-sm"
+                        style={{ padding: "4px 8px" }}
+                        title="Delete Draft"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

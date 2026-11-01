@@ -13,12 +13,15 @@ import InternshipCompanyRegister from "../pages/internship_officer/InternshipCom
 import InternShipVerify from "../pages/internship_officer/InternShipVerify";
 import BatchCategorizer from "../pages/staff/update-category-form";
 import DutyChartPage from "../pages/staff/DutyChartPage";
+import ReportManagement from "../pages/staff/ReportManagement";
+
 const StaffRoutes = () => {
   return (
     <Route element={<RequireRole allowed={ROLE_GROUPS.PLACEMENT_DRIVE} />}>
       <Route path="/staff" element={<StaffLayout />}>
         <Route index element={<StaffNotice />} />
         <Route path="duty-chart" element={<DutyChartPage />} />
+        <Route path="reports" element={<ReportManagement />} />
         <Route path="placement_companies" element={<CompanyPage />} />
         <Route
           path="placement_companies/register"

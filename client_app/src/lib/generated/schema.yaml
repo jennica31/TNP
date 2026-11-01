@@ -1063,6 +1063,398 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/reports/companies/:
+    get:
+      operationId: reports_companies_retrieve
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reports_companies_create
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/companies/{id}/:
+    get:
+      operationId: reports_companies_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: reports_companies_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: reports_companies_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: reports_companies_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reports/reports/:
+    get:
+      operationId: reports_reports_retrieve
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reports_reports_create
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/reports/{id}/:
+    get:
+      operationId: reports_reports_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: reports_reports_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: reports_reports_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: reports_reports_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reports/reports/{report_pk}/entries/:
+    get:
+      operationId: reports_reports_entries_retrieve
+      parameters:
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reports_reports_entries_create
+      parameters:
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/reports/{report_pk}/entries/{id}/:
+    get:
+      operationId: reports_reports_entries_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: reports_reports_entries_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: reports_reports_entries_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: reports_reports_entries_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/reports/reports/{report_pk}/entries/bulk/:
+    post:
+      operationId: reports_reports_entries_bulk_create
+      description: Replace all register entries for a report with the given list.
+      parameters:
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/reports/{report_pk}/phases/:
+    get:
+      operationId: reports_reports_phases_retrieve
+      parameters:
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: reports_reports_phases_create
+      parameters:
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/reports/{report_pk}/phases/{id}/:
+    get:
+      operationId: reports_reports_phases_retrieve_2
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: reports_reports_phases_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: reports_reports_phases_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: report_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/reports/by-batch/:
+    get:
+      operationId: reports_reports_by_batch_retrieve
+      description: Get report by batch+program, or return 404.
+      tags:
+      - reports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/staff/bulk-import/history/:
     get:
       operationId: staff_bulk_import_history_retrieve
@@ -2883,7 +3275,7 @@ components:
           maxLength: 100
         total_hours:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         start_date:
@@ -3020,7 +3412,7 @@ components:
           maxLength: 50
         version_count:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         custom_data: {}
@@ -3123,7 +3515,7 @@ components:
           maxLength: 50
         version_count:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         custom_data: {}
@@ -3545,7 +3937,7 @@ components:
           maxLength: 50
         version_count:
           type: integer
-          maximum: 4294967295
+          maximum: 9223372036854775807
           minimum: 0
           format: int64
         custom_data: {}
