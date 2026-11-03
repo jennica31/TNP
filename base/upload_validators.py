@@ -43,7 +43,8 @@ def sanitize_upload_filename(filename: str) -> str:
     Sanitizes uploaded filenames to prevent path traversal (e.g. ../ or /),
     strips null bytes, and restricts characters to a safe alphanumeric set.
     """
-    clean_name = os.path.basename(filename)
+    clean_name = filename.replace("\\", "/")
+    clean_name = os.path.basename(clean_name)
     clean_name = re.sub(r"[^\w\.\-]", "_", clean_name)
     # Avoid hidden files or double extensions like .php.jpg
     clean_name = clean_name.lstrip(".")

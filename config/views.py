@@ -36,8 +36,8 @@ def serve_media(request, path):
         return HttpResponseForbidden("Authentication required to access media files.")
 
     # Prevent path traversal
-    normalized_path = os.path.normpath(path).lstrip("/\\").replace("\\", "/")
-    if ".." in normalized_path.split(os.sep) or normalized_path.startswith(".."):
+    normalized_path = os.path.normpath(path).replace("\\", "/").lstrip("/")
+    if ".." in normalized_path.split("/") or normalized_path.startswith(".."):
         return HttpResponseForbidden("Access denied: Invalid path traversal attempt.")
 
     # Object-level authorization for sensitive offer letters
