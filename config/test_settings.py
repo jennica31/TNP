@@ -8,6 +8,9 @@ is a bug in the test.
 
 import os
 
+os.environ.setdefault('ENV', 'DEV')
+os.environ.setdefault('SECRET_KEY', 'test-secret-key-for-hermetic-unit-testing-32chars')
+
 from .settings import *  # noqa: F401,F403
 
 # ---------------------------------------------------------------------------
@@ -55,7 +58,11 @@ CELERY_TASK_EAGER_PROPAGATES = False
 # ---------------------------------------------------------------------------
 # PBKDF2 costs ~100ms per user created; the permission matrix builds one user
 # per role per parametrised case.
-PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.MD5PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+]
 
 # ---------------------------------------------------------------------------
 # Determinism
@@ -64,6 +71,10 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 # make test order significant. It has its own dedicated tests (T-14) which
 # re-enable it explicitly.
 RATELIMIT_ENABLE = False
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    "DEFAULT_THROTTLE_CLASSES": [],
+}
 
 # Test requests arrive over plain HTTP; SECURE_SSL_REDIRECT would answer 301
 # before the view ever runs and every status assertion would fail.

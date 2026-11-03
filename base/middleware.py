@@ -3,8 +3,8 @@ from django.conf import settings
 
 class ContentSecurityPolicyMiddleware:
     """
-    Adds a Content-Security-Policy header restricting script execution to this app's
-    own origin plus the specific third-party hosts the templates load.
+    Adds Content-Security-Policy, Referrer-Policy, and Permissions-Policy headers
+    to restrict resource loading, mitigate XSS, and protect browser context.
     """
     def __init__(self, get_response):
         self.get_response = get_response
@@ -27,7 +27,7 @@ class ContentSecurityPolicyMiddleware:
             client_url = getattr(settings, "CLIENT_URL", "")
             policy = "; ".join([
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
                 "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
                 "font-src 'self' https://fonts.gstatic.com",
                 "img-src 'self' data: https://zctindia.org",
@@ -37,6 +37,10 @@ class ContentSecurityPolicyMiddleware:
                 "form-action 'self' " + client_url,
             ])
         response["Content-Security-Policy"] = policy
+        response["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response["X-Content-Type-Options"] = "nosniff"
+        response["X-Frame-Options"] = "DENY"
         return response
 
 

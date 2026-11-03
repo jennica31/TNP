@@ -1,3 +1,6 @@
+import os
+from django.http import HttpResponseForbidden, HttpResponseNotFound
+from base.audit import log_security_event
 from django.contrib.auth.decorators import login_required
 from base.views import redirect_user
 from rest_framework.decorators import api_view, permission_classes
@@ -25,19 +28,45 @@ def serve_static(request, path, document_root=""):
 
 
 def serve_media(request, path):
-    """Serve /media/ uploads directly - there's no Caddy/Nginx in front of
-    the api container anymore to read them off a shared volume (TCET
-    hosting standard: Traefik only routes by Host header, it doesn't serve
-    files). Mirrors the security headers the old Caddyfile applied: nosniff
-    everywhere, plus inline preview for images/documents and download for others.
+    """Serve /media/ uploads securely with authentication and object-level permissions.
+    Prevents path traversal, unauthenticated data leakage, and IDOR on student documents.
     """
-    response = serve(request, path, document_root=settings.MEDIA_ROOT)
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return HttpResponseForbidden("Authentication required to access media files.")
+
+    # Prevent path traversal
+    normalized_path = os.path.normpath(path).lstrip("/\\").replace("\\", "/")
+    if ".." in normalized_path.split(os.sep) or normalized_path.startswith(".."):
+        return HttpResponseForbidden("Access denied: Invalid path traversal attempt.")
+
+    # Object-level authorization for sensitive offer letters
+    if normalized_path.startswith("offer_letters/"):
+        if getattr(user, "role", None) == "student" and not getattr(user, "is_superuser", False):
+            from internship_api.models import InternshipAcceptance
+            filename = os.path.basename(normalized_path)
+            owns = (
+                InternshipAcceptance.objects.filter(student__user=user, offer_letter=normalized_path).exists()
+                or InternshipAcceptance.objects.filter(student__user=user, offer_letter__icontains=filename).exists()
+            )
+            if not owns:
+                log_security_event(
+                    "MEDIA_ACCESS_DENIED",
+                    request=request,
+                    user=user,
+                    details={"path": normalized_path},
+                    status="FAILURE",
+                )
+                return HttpResponseForbidden("Access denied: You do not have permission to view this offer letter.")
+
+    response = serve(request, normalized_path, document_root=settings.MEDIA_ROOT)
     response["X-Content-Type-Options"] = "nosniff"
-    ext = path.lower().split(".")[-1] if "." in path else ""
-    if ext in ("pdf", "png", "jpg", "jpeg", "webp") or path.startswith("profile_images/"):
-        response["Content-Disposition"] = f'inline; filename="{path.split("/")[-1]}"'
+    response["Cache-Control"] = "private, no-cache, must-revalidate"
+    ext = normalized_path.lower().split(".")[-1] if "." in normalized_path else ""
+    if ext in ("pdf", "png", "jpg", "jpeg", "webp") or normalized_path.startswith("profile_images/"):
+        response["Content-Disposition"] = f'inline; filename="{os.path.basename(normalized_path)}"'
     else:
-        response["Content-Disposition"] = f'attachment; filename="{path.split("/")[-1]}"'
+        response["Content-Disposition"] = f'attachment; filename="{os.path.basename(normalized_path)}"'
     return response
 
 
@@ -106,10 +135,12 @@ def my_protected_view(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_api(request):
+    log_security_event("LOGOUT", request=request, user=request.user)
     logout(request)
     response = JSONResponse({"message": "Logged out successfully."})
     domain = getattr(settings, "SESSION_COOKIE_DOMAIN", None)
     response.delete_cookie("is_logged_in", domain=domain)
+    response.delete_cookie(settings.SESSION_COOKIE_NAME, domain=domain)
     return response
 
 @login_required

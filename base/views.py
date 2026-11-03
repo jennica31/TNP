@@ -8,6 +8,8 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from base.validators import password_strength_errors
+from base.audit import log_security_event
+from django.contrib.auth import update_session_auth_hash
 import logging
 from django_ratelimit.decorators import ratelimit
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -51,7 +53,6 @@ def redirect_user(request, user):
 
 
 @never_cache
-@csrf_exempt
 @ratelimit(key="post:email", rate="5/m", method="POST", block=True)
 @ratelimit(key="ip", rate="100/m", method="POST", block=True)
 def login(request):
@@ -65,9 +66,11 @@ def login(request):
 
         user = authenticate(request, email=email, password=password)
         if user is not None:
+            log_security_event("LOGIN_SUCCESS", request=request, user=user)
             response = redirect_user(request, user)
             return response
         else:
+            log_security_event("LOGIN_FAILURE", request=request, details={"email": email}, status="FAILURE")
             messages.error(request, "Invalid email or password.")
 
     return render(request, "base/login.html")
@@ -449,6 +452,22 @@ def passkey_register_begin(request):
     return Response(options, status=status.HTTP_200_OK)
 
 
+
+def _extract_challenge_from_client_data(client_data_raw):
+    if not client_data_raw:
+        return None
+    try:
+        pad = len(client_data_raw) % 4
+        if pad:
+            client_data_raw += "=" * (4 - pad)
+        decoded_bytes = base64.urlsafe_b64decode(client_data_raw)
+        client_data = json.loads(decoded_bytes.decode("utf-8"))
+        challenge = client_data.get("challenge", "")
+        # Remove padding in challenge if any
+        return challenge.rstrip("=")
+    except Exception:
+        return None
+
 @never_cache
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -468,6 +487,24 @@ def passkey_register_finish(request):
     if not cred_id:
         return Response({"error": "Invalid credential ID."}, status=status.HTTP_400_BAD_REQUEST)
 
+    client_data_raw = credential.get("response", {}).get("clientDataJSON")
+    submitted_challenge = _extract_challenge_from_client_data(client_data_raw)
+    
+    challenge_qs = PasskeyChallenge.objects.filter(
+        user=user,
+        challenge_type="register",
+        expires_at__gt=timezone.now(),
+    )
+    if submitted_challenge:
+        matched_challenge = challenge_qs.filter(challenge__startswith=submitted_challenge).first()
+    else:
+        matched_challenge = None
+
+    if not matched_challenge:
+        return Response({"error": "Invalid or expired registration challenge."}, status=status.HTTP_400_BAD_REQUEST)
+
+    matched_challenge.delete()
+
     PasskeyCredential.objects.create(
         user=user,
         credential_id=str(cred_id),
@@ -475,6 +512,7 @@ def passkey_register_finish(request):
         name=name,
         device_type="platform",
     )
+    log_security_event("PASSKEY_REGISTER_SUCCESS", request=request, user=user)
 
     return Response({"status": "passkey_registered", "name": name}, status=status.HTTP_201_CREATED)
 
@@ -534,11 +572,36 @@ def passkey_login_finish(request):
     try:
         passkey = PasskeyCredential.objects.get(credential_id=str(cred_id))
         user = passkey.user
+
+        client_data_raw = credential.get("response", {}).get("clientDataJSON")
+        submitted_challenge = _extract_challenge_from_client_data(client_data_raw)
+
+        challenge_qs = PasskeyChallenge.objects.filter(
+            challenge_type="login",
+            expires_at__gt=timezone.now(),
+        )
+        if submitted_challenge:
+            matched_challenge = challenge_qs.filter(challenge__startswith=submitted_challenge).first()
+        else:
+            matched_challenge = None
+
+        if not matched_challenge:
+            log_security_event("PASSKEY_LOGIN_FAILURE", request=request, details={"reason": "Invalid or expired challenge"}, status="FAILURE")
+            return Response({"error": "Invalid or expired authentication challenge."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if matched_challenge.user and matched_challenge.user != user:
+            log_security_event("PASSKEY_LOGIN_FAILURE", request=request, details={"reason": "User mismatch"}, status="FAILURE")
+            return Response({"error": "Credential does not match expected challenge user."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Single-use challenge: prevent replay attacks
+        matched_challenge.delete()
+
         passkey.last_used = timezone.now()
         passkey.save(update_fields=["last_used"])
 
         # Authenticate and set session cookie
         login_user(request, user)
+        log_security_event("PASSKEY_LOGIN_SUCCESS", request=request, user=user)
         response = Response(
             {
                 "status": "authenticated",
@@ -553,6 +616,7 @@ def passkey_login_finish(request):
         return response
 
     except PasskeyCredential.DoesNotExist:
+        log_security_event("PASSKEY_LOGIN_FAILURE", request=request, details={"reason": "Unrecognized credential"}, status="FAILURE")
         return Response({"error": "Unrecognized Passkey credential."}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -596,10 +660,12 @@ def user_profile(request):
 
 
 def logout_view(request):
+    log_security_event("LOGOUT", request=request, user=request.user)
     logout(request)
     response = redirect('login')
     domain = getattr(settings, "SESSION_COOKIE_DOMAIN", None)
     response.delete_cookie("is_logged_in", domain=domain)
+    response.delete_cookie(settings.SESSION_COOKIE_NAME, domain=domain)
     return response
 
 
@@ -622,5 +688,7 @@ def password_update(request):
             else:
                 user.set_password(password)
                 user.save()
+                update_session_auth_hash(request, user)
+                log_security_event("PASSWORD_CHANGE", request=request, user=user)
                 messages.success(request, "Password updated successfully.")
     return render(request, "base/password_update.html")

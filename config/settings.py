@@ -286,6 +286,14 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     # T-22.
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/minute",
+        "user": "1000/minute",
+    },
 }
 
 
@@ -337,6 +345,17 @@ SPECTACULAR_SETTINGS = {
 # `docker-compose.dev.yml` run) and cannot parse the multi-entry value a
 # Cloudflare + Traefik chain produces. See base/ratelimit.py.
 RATELIMIT_IP_META_KEY = "base.ratelimit.client_ip"
+
+
+# ---------------------------------
+# PASSWORD HASHING (Argon2id primary, PBKDF2 / BCrypt fallback)
+# ---------------------------------
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+]
 
 
 # ---------------------------------
@@ -647,3 +666,50 @@ CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = int(os.getenv("SESSION_COOKIE_AGE", "7200"))
+SESSION_SAVE_EVERY_REQUEST = True
+
+
+# ---------------------------------
+# LOGGING & AUDIT TRAIL
+# ---------------------------------
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "sensitive_filter": {
+            "()": "base.logging_filters.SensitiveDataFilter",
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
+        },
+        "simple": {
+            "format": "%(levelname)s %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["sensitive_filter"],
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.security": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "security.audit": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
