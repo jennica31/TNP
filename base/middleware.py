@@ -27,10 +27,10 @@ class ContentSecurityPolicyMiddleware:
             client_url = getattr(settings, "CLIENT_URL", "")
             policy = "; ".join([
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://static.cloudflareinsights.com" if request.path.startswith("/admin") else "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://static.cloudflareinsights.com",
                 "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
-                "font-src 'self' https://fonts.gstatic.com",
-                "img-src 'self' data: https://zctindia.org",
+                "font-src 'self' data: https://fonts.gstatic.com",
+                "img-src 'self' data: blob: https://zctindia.org",
                 "connect-src 'self' " + client_url + " https://cloudflareinsights.com",
                 "frame-ancestors 'none'",
                 "base-uri 'self'",

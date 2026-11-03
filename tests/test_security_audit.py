@@ -140,6 +140,14 @@ def test_production_csp_excludes_unsafe_eval(client):
     assert "'unsafe-eval'" not in csp
 
 
+@override_settings(IS_DEV=False)
+def test_admin_csp_includes_unsafe_eval_for_alpine(client):
+    """Verify that admin pages include unsafe-eval in production CSP for django-unfold Alpine.js."""
+    response = client.get("/admin/login/")
+    csp = response["Content-Security-Policy"]
+    assert "'unsafe-eval'" in csp
+
+
 # ==============================================================================
 # PART G: TRUSTED PROXY & CLOUDFLARE IP RESOLUTION
 # ==============================================================================
