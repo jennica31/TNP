@@ -1,45 +1,228 @@
-.body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  margin: 0;
-  color: black;
-}
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  color: black;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-table,
-th,
-td {
-  border: 1px solid black;
-}
-th,
-td {
-  padding: 8px;
-  text-align: left;
-  color: black;
-}
-.content-header {
-  margin-bottom: 5px;
-  text-align: center;
-  color: black;
-}
-.fromto {
-  float: right;
-  margin-right: 20px;
-  color: black;
+@import "../../placement_officer/components/notice.css";
+
+/* ── Typography Enhancements: Increased font size and line spacing ── */
+.main-notice {
+  font-size: 14.5px !important;
 }
 
-.footerImage {
-  max-width: 100%;
-  height: auto;
-  object-fit: contain;
-  margin-top: 30px;
+.main-notice .top-doc-meta {
+  font-size: 14px !important;
+}
+
+.main-notice .top-cell-title {
+  font-size: 15.5px !important;
+}
+
+.main-notice .content-header {
+  font-size: 23px !important;
+  margin: 10px 0 16px 0 !important;
+}
+
+.main-notice .metadata-row {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  margin-bottom: 14px !important;
+}
+
+.main-notice .main-body {
+  font-size: 14.5px !important;
+  color: #0f172a !important;
+  line-height: 1.65 !important;
+}
+
+.main-notice .notice-row {
+  margin-bottom: 11px !important;
+  line-height: 1.65 !important;
+  font-size: 14.5px !important;
+}
+
+.main-notice .notice-label {
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+}
+
+.main-notice .subject-text {
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+}
+
+/* ── Training & Jobinar Details Section & Table ── */
+.training-details-section {
+  margin: 10px 0 12px 0;
+  padding: 0;
+  background-color: transparent !important;
+}
+
+.training-details-heading {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: #0f172a;
+  margin-bottom: 6px;
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+.training-details-table {
+  width: 100%;
+  border-collapse: collapse !important;
+  margin: 4px 0 10px 0;
+  background-color: #ffffff;
+  border: 1px solid #000000 !important;
+}
+
+.training-details-table td {
+  border: 1px solid #000000 !important;
+  padding: 6px 12px !important;
+  vertical-align: middle;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+  color: #0f172a;
+}
+
+.training-table-label {
+  font-weight: 700 !important;
+  width: 120px;
+  min-width: 120px;
+  color: #000000 !important;
+}
+
+.training-table-val {
+  color: #000000 !important;
+  font-weight: 500;
+}
+
+/* ── Reasons to Attend ── */
+.training-reasons-title {
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.training-reasons-list {
+  margin: 4px 0 10px 22px;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.training-reasons-list li {
+  margin-bottom: 4px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #1e293b;
+}
+
+/* ── Online Registration Block ── */
+.training-registration-block {
+  margin-top: 12px;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.training-registration-callout {
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.training-reg-link-row {
+  margin-bottom: 5px;
+  font-size: 14px;
+  line-height: 1.65;
+  word-break: break-all;
+}
+
+.training-reg-link-label {
+  font-weight: 700;
+  color: #0f172a;
+  margin-right: 6px;
+}
+
+.training-reg-note {
+  font-style: italic;
+  font-size: 13px;
+  color: #475569;
+  margin-top: 6px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+/* ── Print Styles: Ensure high-fidelity single A4 page with clear borders ── */
+@media print {
+  .main-notice .main-body {
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+  }
+
+  .main-notice .notice-row {
+    margin-bottom: 8px !important;
+    line-height: 1.55 !important;
+    font-size: 13.5px !important;
+  }
+
+  .training-details-section {
+    margin: 8px 0 !important;
+  }
+
+  .training-details-heading {
+    font-size: 13.5px !important;
+    margin-bottom: 5px !important;
+    line-height: 1.45 !important;
+  }
+
+  .training-details-table {
+    border-collapse: collapse !important;
+    border: 1px solid #000000 !important;
+    margin: 3px 0 8px 0 !important;
+  }
+
+  .training-details-table td {
+    border: 1px solid #000000 !important;
+    padding: 5px 10px !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+  }
+
+  .training-table-label {
+    width: 110px !important;
+    min-width: 110px !important;
+    font-weight: 700 !important;
+  }
+
+  .training-reasons-title {
+    font-size: 13.5px !important;
+    margin-top: 6px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .training-reasons-list {
+    margin: 3px 0 6px 18px !important;
+  }
+
+  .training-reasons-list li {
+    font-size: 12.5px !important;
+    margin-bottom: 3px !important;
+    line-height: 1.45 !important;
+  }
+
+  .training-registration-callout {
+    font-size: 13.5px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .training-reg-link-row {
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    margin-bottom: 3px !important;
+  }
+
+  .training-reg-note {
+    font-size: 12.5px !important;
+    margin-top: 4px !important;
+    line-height: 1.4 !important;
+  }
 }

@@ -57,7 +57,7 @@ interface OpportunitySearchCardProps {
   onOpenDrafts?: () => void;
   title?: string;
   searchPlaceholder?: string;
-  noticeType?: "Placement" | "Internship";
+  noticeType?: "Placement" | "Internship" | "Training";
 }
 
 const OpportunitySearchCard: React.FC<OpportunitySearchCardProps> = ({
@@ -73,6 +73,7 @@ const OpportunitySearchCard: React.FC<OpportunitySearchCardProps> = ({
   noticeType = "Placement",
 }) => {
   const isInternship = noticeType === "Internship";
+  const isTraining = noticeType === "Training";
   const [searchQuery, setSearchQuery] = useState(selectedOpportunity?.company_name || "");
   const [selectedBatch, setSelectedBatch] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("All");
@@ -214,7 +215,7 @@ const OpportunitySearchCard: React.FC<OpportunitySearchCardProps> = ({
         >
           {/* ── Row 1, Col 1 : Heading ── */}
           <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#0f172a", lineHeight: 1.2 }}>
-            {title || (isInternship ? "Search Company / Internship Opportunity" : "Search Company / Placement Opportunity")}
+            {title || (isTraining ? "Search Company / Training & Jobinar Opportunity" : isInternship ? "Search Company / Internship Opportunity" : "Search Company / Placement Opportunity")}
           </Typography>
 
           {/* ── Row 1, Col 2 : Saved Draft button (+ status chip when saved) ── */}
@@ -267,7 +268,9 @@ const OpportunitySearchCard: React.FC<OpportunitySearchCardProps> = ({
               fullWidth
               placeholder={
                 searchPlaceholder ||
-                (isInternship
+                (isTraining
+                  ? "Search company, training provider, topic (e.g. TCS iON, AI Agents, Power Platform)..."
+                  : isInternship
                   ? "Search company, role, skill, batch (e.g. TCS, Infosys, Reliance, 2026)..."
                   : "Search company, role, skill, batch (e.g. Infosys, Software, Java, 2027)...")
               }

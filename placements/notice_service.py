@@ -51,12 +51,22 @@ def generate_next_serial_number(notice_type: str = "Placement", target_date: Opt
     year = (target_date or date.today()).year
     is_internship = str(notice_type).strip().lower() in ("internship", "int")
 
+    type_str = str(notice_type).strip().lower()
+    is_internship = type_str in ("internship", "int")
+    is_training = type_str in ("training", "trg")
+
     if is_internship:
         dept_code = "INT"
         type_code = "INT"
         query_type = "Internship"
         prefix = f"TCET/T&P/{dept_code}/{year}/{type_code}-"
         pattern = re.compile(rf"^TCET/T&P/{dept_code}/{year}/(?:INT|PL)-(\d+)$")
+    elif is_training:
+        dept_code = "TRG"
+        type_code = "TRG"
+        query_type = "Training"
+        prefix = f"TCET/T&P/{dept_code}/{year}/{type_code}-"
+        pattern = re.compile(rf"^TCET/T&P/{dept_code}/{year}/(?:TRG)-(\d+)$")
     else:
         dept_code = "OFF"
         type_code = "PL"
@@ -80,6 +90,21 @@ def generate_next_serial_number(notice_type: str = "Placement", target_date: Opt
                 ).values_list("sr_no", flat=True)
             )
             existing_notices.extend(int_notices)
+        except Exception:
+            pass
+    elif is_training:
+        legacy_pattern = re.compile(rf"TCET/T&P/\s*TRG\s+(\d+)\s+of\s+{year}", re.IGNORECASE)
+        try:
+            legacy_notices = list(
+                Notice.objects.filter(
+                    notice_type=query_type,
+                    sr_no__icontains="TRG"
+                ).values_list("sr_no", flat=True)
+            )
+            for l_sr in legacy_notices:
+                m = legacy_pattern.search(l_sr.strip())
+                if m:
+                    existing_notices.append(f"{prefix}{int(m.group(1)):03d}")
         except Exception:
             pass
 
@@ -494,15 +519,27 @@ def get_opportunity_autofill_data(
     forced_type = str(notice_type).strip().lower() if notice_type else ""
     if forced_type in ("internship", "int"):
         is_internship = True
+        is_training = False
+        is_both = False
+    elif forced_type in ("training", "trg"):
+        is_internship = False
+        is_training = True
         is_both = False
     elif forced_type in ("placement", "pl"):
         is_internship = False
+        is_training = False
         is_both = False
     else:
         is_internship = (opp.placement_internship or "").strip().lower() == "internship"
+        is_training = (opp.placement_internship or "").strip().lower() == "training"
         is_both = (opp.placement_internship or "").strip().lower() == "both"
 
-    serial_no = generate_next_serial_number("Internship" if is_internship else "Placement")
+    if is_training:
+        serial_no = generate_next_serial_number("Training")
+    elif is_internship:
+        serial_no = generate_next_serial_number("Internship")
+    else:
+        serial_no = generate_next_serial_number("Placement")
 
     # Departments text
     dept_list = opp.eligible_departments or []
@@ -510,7 +547,12 @@ def get_opportunity_autofill_data(
     batch_val = (opp.batch or "").strip()
     has_valid_batch = bool(batch_val and batch_val.lower() not in ("nan", "none", "null", "n/a", "na", "-"))
 
-    if has_valid_batch:
+    if is_training:
+        batch_text = f"of the {batch_val} batch" if has_valid_batch else "of the 2027 / 2028 / 2029 batch"
+        to_text = f"All Concerned students {batch_text}"
+        subject = f"Registrations for Free {company.name} Jobinar"
+        intro = ""
+    elif has_valid_batch:
         to_text = f"All concerned Students of {batch_val} Batch ({depts_formatted})" if depts_formatted else f"All concerned Students of {batch_val} Batch"
         if is_internship:
             subject = f"Campus Internship Drive - {company.name} for {batch_val} Batch"
@@ -591,7 +633,15 @@ def get_opportunity_autofill_data(
         pass
 
     # Structured table rows
-    if is_both:
+    if is_training:
+        table_rows = [
+            {
+                "type": "Jobinar / Training",
+                "salary": "Free Registration",
+                "position": opp.designation or "AI Agents & Power Platform",
+            }
+        ]
+    elif is_both:
         placement_row = {
             "type": "Regular",
             "salary": raw_salary or "As per company norms",
@@ -675,8 +725,21 @@ def get_opportunity_autofill_data(
         "from_field": "Dr. Zahir Aalam",
         "from_designation": "Dean (TP&IL)",
         "location": "TCET Campus / Online",
-        "notice_type": "Internship" if is_internship else "Placement",
+        "notice_type": "Training" if is_training else ("Internship" if is_internship else "Placement"),
         "status": "DRAFT",
+        "organiser": company.name,
+        "topic": opp.designation or "Can AI Agents Be Created Without Coding?",
+        "session_date": "22nd October 2026 (Thursday)",
+        "session_time": "5:00 PM to 6:00 PM IST",
+        "mode": "Online",
+        "reasons_to_attend": [
+            "Discover: Understand how apps, automation, and AI agents bring ideas to life.",
+            "Learn: Explore how to build solutions using Power Platform and Copilot Studio.",
+            "Explore: Learn about available learning paths, certifications, and emerging career opportunities.",
+        ],
+        "registration_callout": "All eligible and interested students are required to register online",
+        "college_registration_link": "https://forms.gle/rA9RSZ4Ju2oUMETbA",
+        "registration_note": "(It is mandatory to register on both the links - company link and the college link.)",
     }
 
 
@@ -772,7 +835,13 @@ def save_notice_draft(user, draft_id: Optional[int], data: Dict[str, Any], ip_ad
             raise ValidationError("You do not have permission to modify another user's draft.")
     else:
         req_ntype = data.get("notice_type")
-        initial_ntype = "Internship" if req_ntype and req_ntype.strip().lower() in ("internship", "int") else "Placement"
+        req_clean = req_ntype.strip().lower() if req_ntype else ""
+        if req_clean in ("internship", "int"):
+            initial_ntype = "Internship"
+        elif req_clean in ("training", "trg"):
+            initial_ntype = "Training"
+        else:
+            initial_ntype = "Placement"
         notice = Notice(
             status="DRAFT",
             created_by=user,
@@ -810,7 +879,20 @@ def save_notice_draft(user, draft_id: Optional[int], data: Dict[str, Any], ip_ad
 
     req_ntype = data.get("notice_type")
     if req_ntype:
-        notice.notice_type = "Internship" if req_ntype.strip().lower() in ("internship", "int") else "Placement"
+        req_clean = req_ntype.strip().lower()
+        if req_clean in ("internship", "int"):
+            notice.notice_type = "Internship"
+        elif req_clean in ("training", "trg"):
+            notice.notice_type = "Training"
+        else:
+            notice.notice_type = "Placement"
+
+    if notice.notice_type == "Training" or (data.get("notice_type") or "").strip().lower() in ("training", "trg"):
+        custom = dict(notice.custom_data or {})
+        for k in ["organiser", "topic", "session_date", "session_time", "mode", "reasons_to_attend", "college_registration_link", "registration_callout", "registration_note"]:
+            if k in data:
+                custom[k] = data[k]
+        notice.custom_data = custom
 
     notice.sr_no = data.get("sr_no", "").strip() or generate_next_serial_number(notice.notice_type)
     notice.to = sanitize_text(data.get("to", "").strip())
@@ -824,12 +906,17 @@ def save_notice_draft(user, draft_id: Optional[int], data: Dict[str, Any], ip_ad
     notice.updated_by = user
 
     # Extra custom properties
-    notice.custom_data = {
-        "college_registration_link": data.get("college_registration_link", ""),
+    extra_custom = dict(notice.custom_data or {})
+    raw_custom = data.get("custom_data")
+    if isinstance(raw_custom, dict):
+        extra_custom.update(raw_custom)
+    extra_custom.update({
+        "college_registration_link": data.get("college_registration_link") or extra_custom.get("college_registration_link", ""),
         "table_data": table_data,
         "skills_list": data.get("skills_list", []),
         "roles_responsibilities": sanitize_text(data.get("roles_responsibilities", "")),
-    }
+    })
+    notice.custom_data = extra_custom
 
     notice.save()
 

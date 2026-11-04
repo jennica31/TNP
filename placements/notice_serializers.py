@@ -155,6 +155,15 @@ class NoticeDraftSaveSerializer(serializers.Serializer):
     notice_type = serializers.CharField(max_length=50, required=False, allow_blank=True, default="Placement")
     table_data = serializers.ListField(child=serializers.DictField(), required=False)
     skills_list = serializers.ListField(child=serializers.CharField(), required=False)
+    organiser = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    topic = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    session_date = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    session_time = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    mode = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    reasons_to_attend = serializers.ListField(child=serializers.CharField(), required=False)
+    registration_callout = serializers.CharField(required=False, allow_blank=True)
+    registration_note = serializers.CharField(required=False, allow_blank=True)
+    custom_data = serializers.DictField(required=False)
 
 
 class NoticePublishSerializer(serializers.Serializer):

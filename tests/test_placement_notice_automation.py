@@ -464,3 +464,72 @@ class TestPlacementNoticeAutomation:
         assert "9.5 LPA" in data["table_data"][0]["salary"]
         assert "https://careers.example.com/apply/1234" in data["company_registration_link"]
         assert "Java" in data["skill_required"]
+
+    def test_training_serial_number_and_autofill(self, staff_user, sample_opportunity, sample_company):
+        """Verify Training notice serial number and autofill with TCS iON Jobinar pattern."""
+        client = APIClient()
+        client.force_authenticate(user=staff_user)
+
+        # 1. Test next serial number for training
+        from placements.notice_service import generate_next_serial_number
+        sr_trg = generate_next_serial_number("Training")
+        assert sr_trg.startswith("TCET/T&P/TRG/")
+        assert "TRG-" in sr_trg
+
+        # 2. Test opportunity autofill with notice_type=Training
+        url = reverse("placement-opportunity-autofill", kwargs={"pk": sample_opportunity.id})
+        res = client.get(url, {"notice_type": "Training"})
+        assert res.status_code == status.HTTP_200_OK
+        data = res.json()
+
+        assert data["notice_type"] == "Training"
+        assert data["sr_no"].startswith("TCET/T&P/TRG/")
+        assert data["subject"] == f"Registrations for Free {sample_company.name} Jobinar"
+        assert data["organiser"] == sample_company.name
+        assert data["topic"] == sample_opportunity.designation
+        assert len(data["reasons_to_attend"]) >= 1
+        assert "https://forms.gle" in data["college_registration_link"]
+
+    def test_sample_tcs_jobinar_endpoint(self, staff_user):
+        """Verify the sample TCS iON Jobinar notice endpoint returns exact pattern values."""
+        client = APIClient()
+        client.force_authenticate(user=staff_user)
+
+        res = client.get(reverse("training_sample_tcs_jobinar"))
+        assert res.status_code == status.HTTP_200_OK
+        data = res.json()
+
+        assert "TCET/T&P/ TRG   107     of 2026" in data["srNo"]
+        assert "2027 / 2028 / 2029" in data["to"]
+        assert data["subject"] == "Registrations for Free TCS iON Jobinar"
+        assert data["organiser"] == "TCS iON"
+        assert data["mode"] == "Online"
+        assert "https://iur.ls/TCSiONJobinars" in data["company_registration_link"]
+        assert "https://forms.gle/rA9RSZ4Ju2oUMETbA" in data["college_registration_link"]
+
+    def test_training_notice_draft_save(self, staff_user):
+        """Verify saving a training notice draft retains notice_type and custom details."""
+        client = APIClient()
+        client.force_authenticate(user=staff_user)
+
+        payload = {
+            "notice_type": "Training",
+            "sr_no": "TCET/T&P/ TRG   107     of 2026",
+            "date": "2026-10-16",
+            "to": "All Concerned students of the 2027 / 2028 / 2029 batch",
+            "subject": "Registrations for Free TCS iON Jobinar",
+            "intro": "All concerned students are hereby informed...",
+            "eligibility_criteria": "B.E / B.Tech (All Branch) / MCA / BCA",
+            "organiser": "TCS iON",
+            "topic": "Can AI Agents Be Created Without Coding?",
+            "college_registration_link": "https://forms.gle/rA9RSZ4Ju2oUMETbA",
+        }
+
+        res = client.post(reverse("placement-notice-drafts"), payload, format="json")
+        assert res.status_code == status.HTTP_201_CREATED
+        notice_id = res.json()["notice"]["id"]
+
+        notice = Notice.objects.get(id=notice_id)
+        assert notice.notice_type == "Training"
+        assert notice.custom_data.get("organiser") == "TCS iON"
+        assert notice.custom_data.get("college_registration_link") == "https://forms.gle/rA9RSZ4Ju2oUMETbA"
