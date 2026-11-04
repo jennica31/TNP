@@ -2657,6 +2657,30 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/training_officer/notice/next-serial-number/:
+    get:
+      operationId: training_officer_notice_next_serial_number_retrieve
+      description: Fetch next institutional serial number for Training notice.
+      tags:
+      - training_officer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/training_officer/notice/sample-tcs-jobinar/:
+    get:
+      operationId: training_officer_notice_sample_tcs_jobinar_retrieve
+      description: Retrieve standardized sample payload based on TCS iON Jobinar document.
+      tags:
+      - training_officer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          description: No response body
   /auth/api/passkey/credentials/:
     get:
       operationId: auth_api_passkey_credentials_retrieve
@@ -3275,7 +3299,7 @@ components:
           maxLength: 100
         total_hours:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         start_date:
@@ -3412,7 +3436,7 @@ components:
           maxLength: 50
         version_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         custom_data: {}
@@ -3515,7 +3539,7 @@ components:
           maxLength: 50
         version_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         custom_data: {}
@@ -3937,7 +3961,7 @@ components:
           maxLength: 50
         version_count:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 4294967295
           minimum: 0
           format: int64
         custom_data: {}

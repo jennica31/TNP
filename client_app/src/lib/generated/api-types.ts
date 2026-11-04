@@ -2233,6 +2233,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/training_officer/notice/next-serial-number/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Fetch next institutional serial number for Training notice. */
+        get: operations["training_officer_notice_next_serial_number_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/training_officer/notice/sample-tcs-jobinar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Retrieve standardized sample payload based on TCS iON Jobinar document. */
+        get: operations["training_officer_notice_sample_tcs_jobinar_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/api/passkey/credentials/": {
         parameters: {
             query?: never;
@@ -6233,6 +6267,42 @@ export interface operations {
             path: {
                 table_name: string;
             };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    training_officer_notice_next_serial_number_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    training_officer_notice_sample_tcs_jobinar_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
